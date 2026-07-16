@@ -1,0 +1,31 @@
+{
+  "_ts": 1752652800000,
+  "_note": "2026-07-16 初期公開。週次でClaudeがスクショから更新する。",
+  "profiles": {
+    "honnin": {
+      "logs": [
+        {"week":0,"date":"2026-07-06","rate":3.464,"spread":1.4,"lots":17,"swap":0,"deposit":519000,"withdraw":0,"balance":516302,"pl":-4670,"memo":"8@3.459＋6@3.475＋3@3.458＝17ロット（07/10に+3ロット追加）"}
+      ],
+      "batches": [
+        {"date":"2026-07-06","rate":3.459,"lots":8},
+        {"date":"2026-07-08","rate":3.475,"lots":6},
+        {"date":"2026-07-10","rate":3.458,"lots":3}
+      ],
+      "inputs": {"unit":"26","actual":"1920","total":"516302","g1":"100","g2":"200"}
+    },
+    "chichi": {
+      "logs": [
+        {"week":0,"date":"","rate":0,"spread":0,"lots":0,"swap":0,"deposit":0,"withdraw":0,"balance":0,"pl":0,"memo":"未開始（口座開設の審査中）"}
+      ],
+      "batches": [],
+      "inputs": {"unit":"26","actual":"0","total":"0","g1":"100","g2":"200"}
+    },
+    "haha": {
+      "logs": [
+        {"week":0,"date":"","rate":0,"spread":0,"lots":0,"swap":0,"deposit":0,"withdraw":0,"balance":0,"pl":0,"memo":"未開始（口座開設済み・入金前）"}
+      ],
+      "batches": [],
+      "inputs": {"unit":"26","actual":"0","total":"0","g1":"100","g2":"200"}
+    }
+  }
+}

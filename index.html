@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ルートB 運用ツール</title>
+<style>
+:root{--navy:#12303f;--navy2:#1c4254;--gold:#e6b23c;--goldd:#b07d04;--ink:#173643;--muted:#5a6b72;--line:#e7e0d2;--bg:#fbf8f1;--ok:#1b7a4b;--ng:#c2410c;}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Yu Gothic","Hiragino Kaku Gothic ProN",system-ui,sans-serif;color:var(--ink);background:var(--bg);}
+.wrap{max-width:880px;margin:0 auto;padding:0 16px 60px;}
+header{background:var(--navy);color:#efe7d6;padding:18px 16px;}
+.head-in{max-width:880px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.brand{font-size:20px;font-weight:700;}
+.brand small{display:block;font-size:12px;font-weight:400;color:#a9c0c9;margin-top:2px;}
+.pricechip{background:var(--navy2);border-radius:10px;padding:8px 14px;text-align:right;}
+.pricechip .pv{font-size:20px;font-weight:700;color:var(--gold);}
+.pricechip .pt{font-size:11px;color:#a9c0c9;}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0;}
+.tabs button{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 16px;border-radius:999px;font-size:14px;cursor:pointer;}
+.tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.panel{display:none;}
+.panel.on{display:block;}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px;}
+h2{font-size:16px;margin:0 0 14px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.mc{background:var(--bg);border-radius:10px;padding:13px 15px;}
+.mc .l{font-size:12px;color:var(--muted);}
+.mc .v{font-size:22px;font-weight:700;margin-top:5px;}
+.gold{color:var(--goldd);}
+.prog{margin:14px 0;}
+.prog .pl{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:5px;}
+.ptrack{background:var(--bg);border-radius:7px;height:16px;overflow:hidden;border:1px solid var(--line);}
+.pfill{height:100%;background:var(--gold);width:2%;}
+.rule{display:flex;gap:12px;margin:12px 0;}
+.rule .n{flex:0 0 30px;height:30px;border-radius:50%;background:var(--gold);color:#3a2a00;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
+.rule .t{font-size:15px;line-height:1.55;}
+.eq{background:var(--navy);color:var(--gold);border-radius:12px;padding:18px;text-align:center;font-size:20px;font-weight:700;margin:10px 0;font-family:ui-monospace,monospace;}
+.chartbox{margin-top:8px;}
+.ctl{display:flex;align-items:center;gap:12px;margin:10px 0;}
+.ctl label{font-size:14px;color:var(--muted);min-width:120px;}
+.ctl input[type=range]{flex:1;}
+.ctl input[type=number]{width:120px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;}
+.ctl .out{font-size:14px;font-weight:700;min-width:74px;text-align:right;}
+.cap{font-size:13px;color:var(--muted);background:var(--bg);border-radius:8px;padding:8px 12px;margin:8px 0 14px;}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 14px;}
+.fld{display:flex;flex-direction:column;gap:4px;}
+.fld label{font-size:12px;color:var(--muted);}
+.fld input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;width:100%;font-family:inherit;font-size:14px;}
+button.btn{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;font-size:14px;}
+button.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);}
+.btnx{background:none;border:none;color:var(--ng);cursor:pointer;font-size:16px;padding:0 6px;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;}
+th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:right;}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
+.badge{display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;}
+.b-ok{background:#e3f2e9;color:var(--ok);}
+.b-ng{background:#fbe6da;color:var(--ng);}
+.muted{color:var(--muted);font-size:13px;line-height:1.7;}
+.warn{background:#fbe6da;border-radius:10px;padding:12px 14px;font-size:13px;color:#7a3410;line-height:1.6;}
+</style>
+</head>
+<body>
+<header><div class="head-in">
+<div class="brand">ルートB 運用ツール<small>トルコリラ円 スワップ運用 ｜ 本人・父・母を切替</small></div>
+<select id="prof" style="padding:8px 12px;border-radius:8px;border:1px solid #2c4a5a;background:#1c4254;color:#efe7d6;font-size:14px;font-family:inherit;cursor:pointer"><option value="honnin">本人</option><option value="chichi">父</option><option value="haha">母</option></select>
+<div class="pricechip"><div class="pv" id="hp_rate">—</div><div class="pt" id="hp_time">価格取得中…</div></div>
+</div></header>
+<div class="wrap">
+<div class="tabs">
+<button class="on" data-tab="now">現況</button>
+<button data-tab="rules">取引ルール</button>
+<button data-tab="sim">シミュレーション</button>
+<button data-tab="batches">建玉管理</button>
+<button data-tab="lc">ロスカット試算</button>
+<button data-tab="report">週次報告</button>
+<button data-tab="price">価格＆スプレッド</button>
+</div>
+
+<section class="panel on" id="now">
+<div class="card"><h2>現況</h2>
+<div class="grid">
+<div class="mc"><div class="l">経過</div><div class="v" id="n_week">0 週</div></div>
+<div class="mc"><div class="l">保有ロット</div><div class="v" id="n_lots">17</div></div>
+<div class="mc"><div class="l">口座残高</div><div class="v gold" id="n_bal">50万円</div></div>
+<div class="mc"><div class="l">累計スワップ</div><div class="v" id="n_swap">0円</div></div>
+<div class="mc"><div class="l">含み損益</div><div class="v" id="n_pl">0円</div></div>
+</div>
+<div class="prog"><div class="pl"><span id="n_g1lab">目標1</span><span id="n_m1p">—</span></div><div class="ptrack"><div class="pfill" id="n_m1b"></div></div></div>
+<div class="prog"><div class="pl"><span id="n_g2lab">目標2</span><span id="n_m2p">—</span></div><div class="ptrack"><div class="pfill" id="n_m2b"></div></div></div>
+<div class="row" style="margin-top:8px;gap:14px">
+<div class="fld" style="flex:0 0 auto"><label>目標1（ロット）</label><input type="number" id="g1" value="100" style="width:110px"></div>
+<div class="fld" style="flex:0 0 auto"><label>目標2（ロット）</label><input type="number" id="g2" value="200" style="width:110px"></div>
+</div>
+</div>
+<div class="card"><h2>スワップ＆買い増し（自動計算）</h2>
+<div class="ctl"><label>スワップ単価(円/日/ロット)</label><input type="number" id="sw_unit" value="26" style="max-width:100px"></div>
+<div class="ctl"><label>GMO累計スワップ(実績・円)</label><input type="number" id="sw_actual" value="1920" style="max-width:120px"></div>
+<div class="grid">
+<div class="mc"><div class="l">経過日数</div><div class="v" id="sw_days">—</div></div>
+<div class="mc"><div class="l">1日の想定スワップ</div><div class="v gold" id="sw_day">—</div></div>
+<div class="mc"><div class="l">累計スワップ</div><div class="v gold" id="sw_cum">—</div></div>
+<div class="mc"><div class="l">安全に持てるロット</div><div class="v" id="sw_safe">—</div></div>
+</div>
+<p class="muted" id="sw_buy"></p>
+<p class="muted" id="sw_hint"></p>
+<p class="muted">自動の概算です。正確なスワップはGMOの「累計スワップ付与額」で確認し、週次で実績を入力すると補正されます。買い増しは「安全に持てるロット数」まで（現レート×10,400ベース）。</p>
+</div>
+<div class="card"><h2>資産の推移（実績）</h2><div class="chartbox" id="n_chart"></div><p class="muted" id="n_note"></p></div>
+</section>
+
+<section class="panel" id="rules">
+<div class="card"><h2>3つのルール＋鉄則</h2>
+<div class="rule"><div class="n">1</div><div class="t">通貨は <b>トルコリラ円（TRY/JPY）の「買い」</b> のみ。売りは毎日金利を引かれる。</div></div>
+<div class="rule"><div class="n">2</div><div class="t"><b>スプレッドが1.7以下で買う／1.8以上は買わない。</b></div></div>
+<div class="rule"><div class="n">3</div><div class="t"><b>1ロットの元金＝レート×10,400</b> で持つ（資金を飛ばさない公式）。</div></div>
+<div class="rule"><div class="n">4</div><div class="t"><b>決済しない</b>。スワップで増やす。含み損・含み益は気にしない。</div></div>
+<div class="eq">レート × 10,400 ＝ 1ロットの元金</div>
+<p class="muted">例）レート3.5円 → 36,400円 / 1ロット　｜　保有ロット＝元金 ÷ 公式（切り捨て）<br>※スプレッドは早朝・指標発表・要人発言などで開きやすい。開いている時は無理に買わない。</p>
+</div>
+<div class="card"><h2>運用・口座・税務</h2>
+<p class="muted">
+・買い増し：スワップが「1ロット元金」分たまるごとに +1ロット（1.7以下で）<br>
+・追加入金：予定額を決めてから。借入・すぐ使う金はNG。元金の引き出しもNG<br>
+・口座：まず GMO で100ロット（上限）→ 次に みんなのFX「ライトモード」<br>
+・報告：毎週土曜 朝7時以降に記録<br>
+・税務：申告分離 約20.315%／年利益20万円超で申告／セミナー代・サポート代は経費計上可<br>
+・相続：FXポジションは相続不可→現金化して相続。81歳から新規口座・建玉に制限
+</p>
+</div>
+<div class="card"><h2>リスク（必ず意識する）</h2>
+<div class="warn">トルコリラは高インフレで対円下落が続いてきた通貨。スワップは利下げで減ることがある。「資金が飛ばない」＝追証が来にくいだけで、<b>含み損＝評価額の目減りは起こる</b>。撤退・見直しラインは自分で先に決めておく（例：政策金利◯%割れ／スワップ◯円割れ）。</div>
+</div>
+</section>
+
+<section class="panel" id="sim">
+<div class="card"><h2>シミュレーション（詳細・月ごと）</h2>
+<div class="form" style="margin-bottom:6px">
+<div class="fld"><label>初期資金（円）</label><input type="number" id="sd_cap" value="2000000"></div>
+<div class="fld"><label>毎月の追加入金（円）</label><input type="number" id="sd_add" value="30000"></div>
+<div class="fld"><label>レート(円)</label><input type="number" step="0.01" id="sd_rate" value="3.46"></div>
+<div class="fld"><label>スワップ(円/日/ロット)</label><input type="number" id="sd_sw" value="26"></div>
+<div class="fld"><label>目標ロット</label><input type="number" id="sd_target" value="200"></div>
+<div class="fld"><label>表示する月数</label><input type="number" id="sd_months" value="60"></div>
+</div>
+<div class="row" style="margin:4px 0 12px">
+<label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px"><input type="checkbox" id="sd_comp" checked style="width:17px;height:17px">複利運用（スワップで買い増し）</label>
+<label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px"><input type="checkbox" id="sd_tax" style="width:17px;height:17px">税引き後(20.315%)で計算</label>
+</div>
+<div class="grid">
+<div class="mc"><div class="l">目標到達まで</div><div class="v gold" id="sd_eta">—</div></div>
+<div class="mc"><div class="l">スタート時ロット</div><div class="v" id="sd_start">—</div></div>
+<div class="mc"><div class="l">最終ロット</div><div class="v" id="sd_final">—</div></div>
+<div class="mc"><div class="l">最終の月スワップ</div><div class="v gold" id="sd_income">—</div></div>
+</div>
+<div class="chartbox" id="sd_chart" style="margin-top:14px"></div>
+<div style="max-height:340px;overflow:auto;margin-top:10px">
+<table id="sd_table"><thead><tr><th>経過</th><th>ロット</th><th>総資産</th><th>累計投入</th><th>総利益</th><th>月スワップ</th></tr></thead><tbody></tbody></table>
+</div>
+<p class="muted" id="sd_note"></p>
+<p class="muted">「複利運用」ON＝スワップで1ロット分たまるごとに即買い増し。OFF＝スワップは現金として貯めるだけ（買い増しは毎月入金のぶんだけ）。総利益＝総資産−累計投入（≒受け取りスワップ）。レート横ばい・スワップ継続を仮定。税引き後は利益に20.315%課税して再投資した場合。実際はレート下落・スワップ減で変わります。</p>
+</div>
+</section>
+
+<section class="panel" id="batches">
+<div class="card"><h2>建玉（買い増し）管理</h2>
+<div class="ctl"><label>総資金（GMO時価評価総額）</label><input type="number" id="b_total" value="516302" style="max-width:150px"></div>
+<div class="grid">
+<div class="mc"><div class="l">保有ロット合計</div><div class="v" id="b_lots">—</div></div>
+<div class="mc"><div class="l">平均建玉レート</div><div class="v" id="b_avg">—</div></div>
+<div class="mc"><div class="l">元金拘束合計</div><div class="v" id="b_committed">—</div></div>
+<div class="mc"><div class="l">使えるお金</div><div class="v gold" id="b_free">—</div></div>
+<div class="mc"><div class="l">現レートであと</div><div class="v" id="b_more">—</div></div>
+</div>
+<p class="muted" id="b_hint"></p>
+<table id="b_table"><thead><tr><th>日付</th><th>レート</th><th>ロット</th><th>この塊の元金</th><th></th></tr></thead><tbody></tbody></table>
+<div class="form" style="margin-top:12px">
+<div class="fld"><label>日付</label><input type="date" id="b_date"></div>
+<div class="fld"><label>レート</label><input type="number" step="0.001" id="b_rate" placeholder="3.47"></div>
+<div class="fld"><label>ロット数</label><input type="number" id="b_num" placeholder="3"></div>
+</div>
+<div class="row"><button class="btn" id="b_add">この買いを記録</button><span class="muted" id="b_msg"></span></div>
+<p class="muted">各買いを「日付・レート・ロット数」で記録。元金拘束＝Σ(ロット×レート×10,400)、使えるお金＝総資金−元金拘束、あと買える＝使えるお金÷(現レート×10,400)。買ったら「この買いを記録」で追加。</p>
+</div>
+</section>
+
+<section class="panel" id="lc">
+<div class="card"><h2>ロスカット試算（レバレッジ別）</h2>
+<div class="ctl"><label>ロット数</label><input type="number" id="lc_lots" value="17" style="max-width:100px"></div>
+<div class="ctl"><label>平均建玉レート</label><input type="number" step="0.001" id="lc_rate" value="3.464" style="max-width:120px"></div>
+<div class="ctl"><label>投下資金（証拠金・円）</label><input type="number" id="lc_cap" value="516302" style="max-width:150px"></div>
+<div class="ctl"><label>ロスカット水準(%)</label><input type="number" id="lc_level" value="50" style="max-width:90px"></div>
+<div class="grid" style="margin-top:8px">
+<div class="mc"><div class="l">実効レバレッジ</div><div class="v" id="lc_lev">—</div></div>
+<div class="mc"><div class="l">必要証拠金</div><div class="v" id="lc_req">—</div></div>
+<div class="mc"><div class="l">今の証拠金維持率</div><div class="v" id="lc_mr">—</div></div>
+<div class="mc"><div class="l">ロスカット価格</div><div class="v gold" id="lc_price">—</div></div>
+</div>
+<p class="muted" id="lc_drop"></p>
+<p class="muted" id="lc_verdict" style="font-weight:500"></p>
+<p class="muted">ロット数を変えると「その枚数だと何円でロスカットか」が出ます。GMO FXネオのロスカット水準は50%（要確認）。※急変時は表示価格より不利に約定することあり。安全な公式（レート×10,400）で持てば、ロスカット価格は0円以下＝ほぼ発動しません。</p>
+</div>
+</section>
+
+<section class="panel" id="report">
+<div class="card"><h2>週次アップデート（GMOのスクショから入力）</h2>
+<p class="muted">GMO「建玉一覧」の数字をそのまま入れて「更新」を押すと、現況・建玉・ロスカット・目標が全部再計算されます。上の <b>本人／父／母</b> で選んだ人に保存されます。</p>
+<div class="form">
+<div class="fld"><label>日付</label><input type="date" id="f_date"></div>
+<div class="fld"><label>保有ロット（建玉数量）</label><input type="number" id="f_lots" placeholder="17"></div>
+<div class="fld"><label>平均建玉レート</label><input type="number" step="0.001" id="f_rate" placeholder="3.464"></div>
+<div class="fld"><label>時価評価総額(円)</label><input type="number" id="f_eq" placeholder="516302"></div>
+<div class="fld"><label>累計スワップ付与額(円)</label><input type="number" id="f_swcum" placeholder="1920"></div>
+<div class="fld"><label>含み損益(円)</label><input type="number" id="f_pl" placeholder="-4670"></div>
+<div class="fld"><label>追加入金(円・任意)</label><input type="number" id="f_dep" placeholder="0"></div>
+<div class="fld" style="grid-column:1/-1"><label>メモ（任意）</label><input type="text" id="f_memo" placeholder="任意"></div>
+</div>
+<div class="row">
+<button class="btn" id="f_save">この内容で更新</button>
+<button class="btn ghost" id="f_copy">Claude用にコピー</button>
+<span class="muted" id="f_msg"></span>
+</div>
+<table id="hist"><thead><tr><th>週</th><th>日付</th><th>レート</th><th>ロット</th><th>今週スワップ</th><th>時価総額</th><th>含み損益</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="card"><h2>バックアップ（3人分まとめて）</h2>
+<p class="muted">データはこのブラウザ内（localStorage）に保存されます。1台に依存するので、ときどき書き出して保管を。読み込むと全プロフィール（本人・父・母）が復元されます。</p>
+<div class="row">
+<button class="btn ghost" id="d_export">全データを書き出し(JSON)</button>
+<label class="btn ghost" style="cursor:pointer">全データを読み込み<input type="file" id="d_import" accept="application/json,.json" style="display:none"></label>
+<button class="btn ghost" id="f_csv">今の人のCSV</button>
+<span class="muted" id="d_msg"></span>
+</div>
+</div>
+</section>
+
+<section class="panel" id="price">
+<div class="card"><h2>トルコリラ円 価格（参考レート）</h2>
+<div class="grid">
+<div class="mc"><div class="l">TRY/JPY（仲値）</div><div class="v gold" id="p_rate">—</div></div>
+<div class="mc"><div class="l">1ロットの元金</div><div class="v" id="p_cost">—</div></div>
+<div class="mc"><div class="l">更新</div><div class="v" style="font-size:15px" id="p_time">—</div></div>
+</div>
+<div class="row"><button class="btn" id="p_refresh">価格を更新</button></div>
+<div style="margin-top:16px">
+<div class="ctl"><label>今のスプレッド</label><input type="number" step="0.1" id="p_sp" placeholder="1.6"><span id="p_spjudge"></span></div>
+<p class="muted">※ 表示は無料の参考“仲値”レート（ほぼ日次更新）。実際の <b>買い/売りのスプレッドは証券会社（GMO・みんなのFX）の画面</b>で確認し、上に入れて1.7以下か判定してください。</p>
+</div>
+</div>
+</section>
+
+<p class="muted" style="text-align:center">データはこのブラウザ内（localStorage）に保存。バックアップはCSVエクスポートを。</p>
+</div>
+<script>
+try{var _q=new URLSearchParams(location.search).get('p');if(_q&&['honnin','chichi','haha'].indexOf(_q)>=0){localStorage.setItem('routeB_curprof',_q);}}catch(e){}
+var PROF=localStorage.getItem('routeB_curprof')||'honnin';
+function pk(b){return 'routeB_'+PROF+'_'+b;}
+var KEY=pk('logs');
+function safeGet(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function safeSave(a){try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){}}
+var DATA=safeGet();
+if(!DATA.length){DATA=(PROF==='honnin')?[{week:0,date:'2026-07-06',rate:3.464,spread:1.4,lots:17,swap:0,deposit:519000,withdraw:0,balance:516302,pl:-4670,memo:'8@3.459＋6@3.475＋3@3.458＝17ロット（07/10に+3ロット追加）'}]:[{week:0,date:'',rate:0,spread:0,lots:0,swap:0,deposit:0,withdraw:0,balance:0,pl:0,memo:'未開始'}];safeSave(DATA);}
+var LIVE=3.5;
+function yen(v){return Math.round(v).toLocaleString('ja-JP')+'円'}
+function man(v){return Math.round(v/10000).toLocaleString()+'万円'}
+function lotcost(r){return r*10400}
+function id(x){return document.getElementById(x)}
+function v(x){return +id(x).value}
+
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){
+document.querySelectorAll('.tabs button').forEach(function(x){x.classList.remove('on')});
+document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('on')});
+b.classList.add('on');id(b.dataset.tab).classList.add('on');
+}});
+
+function chartSVG(vals,targets,accent){
+var W=620,H=240,pad=34,n=vals.length;
+if(n<2)return '<p class="muted">データが増えるとここに折れ線グラフが出ます。</p>';
+var allv=vals.concat((targets||[]).map(function(t){return t.v}));
+var max=Math.max.apply(null,allv)*1.12||1;
+function X(i){return pad+(W-pad-12)*(i/(n-1))}
+function Y(val){return H-pad-(H-pad-14)*(val/max)}
+var line=vals.map(function(val,i){return X(i)+','+Y(val)}).join(' ');
+var area='M'+X(0)+','+(H-pad)+' L'+vals.map(function(val,i){return X(i)+','+Y(val)}).join(' L')+' L'+X(n-1)+','+(H-pad)+' Z';
+var tl=(targets||[]).filter(function(t){return t.v<=max}).map(function(t){return '<line x1="'+pad+'" y1="'+Y(t.v)+'" x2="'+(W-12)+'" y2="'+Y(t.v)+'" stroke="#c9bfa6" stroke-dasharray="4 4"/><text x="'+(W-14)+'" y="'+(Y(t.v)-4)+'" text-anchor="end" font-size="11" fill="#8a7a4a">'+t.label+'</text>'}).join('');
+var xl=[];for(var i=0;i<n;i+=Math.max(1,Math.round((n-1)/5))){xl.push('<text x="'+X(i)+'" y="'+(H-10)+'" text-anchor="middle" font-size="11" fill="#8a949a">'+(vals._lab?vals._lab(i):i)+'</text>')}
+return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="auto" preserveAspectRatio="xMidYMid meet"><path d="'+area+'" fill="'+accent+'22"/><polyline points="'+line+'" fill="none" stroke="'+accent+'" stroke-width="2.5" stroke-linejoin="round"/>'+tl+xl.join('')+'</svg>';
+}
+
+function renderNow(){
+var last=DATA[DATA.length-1];
+var cum=(+id('sw_actual').value)||DATA.reduce(function(s,r){return s+(+r.swap||0)},0);
+var bal=last.balance,lots=+last.lots;
+id('n_week').textContent=last.week+' 週';
+id('n_lots').textContent=lots.toLocaleString();
+id('n_bal').textContent=man(bal);
+id('n_swap').textContent=yen(cum);
+id('n_pl').textContent=yen(last.pl);
+var unit=+id('sw_unit').value||26;
+var g1=+id('g1').value||1,g2=+id('g2').value||1;
+function pc(t){return Math.min(100,Math.round(lots/t*100))}
+function glab(n,g){return '目標'+n+'：'+g.toLocaleString()+'ロット（≈資産'+man(g*lotcost(LIVE))+'・月収'+man(g*unit*30.4)+'）';}
+id('n_g1lab').textContent=glab(1,g1);id('n_g2lab').textContent=glab(2,g2);
+id('n_m1b').style.width=pc(g1)+'%';id('n_m1p').textContent=pc(g1)+'%';
+id('n_m2b').style.width=pc(g2)+'%';id('n_m2p').textContent=pc(g2)+'%';
+id('n_note').textContent='目標はロット数で設定（上の入力欄）。資産・月収の目安と達成率が自動で出ます。現レート'+LIVE.toFixed(3)+'円で計算。';
+var series=DATA.map(function(r){return r.balance});series._lab=function(i){return DATA[i].week+'週'};
+id('n_chart').innerHTML=chartSVG(series,[{v:g1*lotcost(LIVE),label:'目標1'},{v:g2*lotcost(LIVE),label:'目標2'}],'#e6b23c');
+}
+id('g1').oninput=function(){renderNow();saveInputs();};
+id('g2').oninput=function(){renderNow();saveInputs();};
+
+function renderSim(){
+var cap=+id('sd_cap').value||0,monthly=+id('sd_add').value||0,E=+id('sd_rate').value||3.46,s=+id('sd_sw').value||26,target=+id('sd_target').value||1,months=Math.min(Math.max(Math.round(+id('sd_months').value||60),1),360);
+var comp=id('sd_comp').checked,tax=id('sd_tax').checked?0.20315:0;
+var L=E*10400,N0=Math.floor(cap/L),N=N0,cash=cap-N*L,banked=0,invested=cap;
+var mLen=365.25/12,hitMonth=(N>=target)?0:null,rows=[],series=[];
+for(var m=1;m<=months;m++){
+var d0=Math.round((m-1)*mLen),d1=Math.round(m*mLen);
+for(var d=d0+1;d<=d1;d++){var inc=N*s*(1-tax);if(comp){cash+=inc;while(cash>=L){cash-=L;N++;}}else{banked+=inc;}}
+cash+=monthly;invested+=monthly;
+while(cash>=L){cash-=L;N++;}
+if(hitMonth===null&&N>=target)hitMonth=m;
+var assets=N*L+cash+banked;
+rows.push({m:m,lots:N,assets:assets,invested:invested,profit:assets-invested,mo:N*s*30.4*(1-tax)});
+series.push(assets);
+}
+function ym(mm){if(mm===0)return 'もう到達';if(mm===null)return months+'ヶ月では未達';var y=Math.floor(mm/12),mo=mm%12;return (y>0?y+'年':'')+(mo>0?mo+'ヶ月':(y>0?'':'0ヶ月'));}
+id('sd_eta').textContent=ym(hitMonth);
+id('sd_start').textContent=N0.toLocaleString()+' ロット';
+var last=rows[rows.length-1];
+id('sd_final').textContent=last?last.lots.toLocaleString()+' ロット':'—';
+id('sd_income').textContent=last?yen(last.mo)+'/月':'—';
+var tb=document.querySelector('#sd_table tbody');tb.innerHTML='';
+rows.forEach(function(r){var tr=document.createElement('tr');tr.innerHTML='<td>'+r.m+'ヶ月後</td><td>'+r.lots.toLocaleString()+'</td><td>'+yen(r.assets)+'</td><td>'+yen(r.invested)+'</td><td>'+yen(r.profit)+'</td><td>'+yen(r.mo)+'</td>';tb.appendChild(tr);});
+series._lab=function(i){return Math.round(rows[i].m/12)+'年'};
+id('sd_chart').innerHTML=chartSVG(series,[{v:target*L,label:'目標'+target+'ロット'}],'#e6b23c');
+id('sd_note').textContent='初期'+man(cap)+'＋毎月'+man(monthly)+' ／ '+E.toFixed(2)+'円・スワップ'+s+'円/日・'+(comp?'複利ON':'複利OFF')+(tax?'・税引後':'')+' → '+months+'ヶ月後に '+(last?last.lots.toLocaleString():'0')+'ロット・資産'+man(last?last.assets:cap)+'・総利益'+man(last?last.profit:0);
+}
+['sd_cap','sd_add','sd_rate','sd_sw','sd_target','sd_months'].forEach(function(x){id(x).oninput=renderSim;});
+['sd_comp','sd_tax'].forEach(function(x){id(x).onchange=renderSim;});
+
+function renderHist(){
+var tb=document.querySelector('#hist tbody');tb.innerHTML='';
+DATA.slice().reverse().forEach(function(r){
+var tr=document.createElement('tr');
+tr.innerHTML='<td>'+r.week+'</td><td>'+r.date+'</td><td>'+r.rate+'</td><td>'+r.lots+'</td><td>'+Number(r.swap).toLocaleString()+'</td><td>'+Number(r.balance).toLocaleString()+'</td><td>'+Number(r.pl).toLocaleString()+'</td>';
+tb.appendChild(tr);
+});
+}
+function num(x){var el=id(x);if(!el)return 0;var val=el.value;return val===''?0:+val}
+id('f_save').onclick=function(){
+var last=DATA[DATA.length-1];
+var lots=num('f_lots'),avg=num('f_rate'),eq=num('f_eq'),swcum=num('f_swcum'),pl=num('f_pl'),dep=num('f_dep');
+if(!eq&&!lots){id('f_msg').textContent='保有ロットと時価総額を入れてね';return;}
+var lastCum=+id('sw_actual').value||0;var wk=Math.max(0,swcum-lastCum);
+DATA.push({week:last.week+1,date:id('f_date').value||'-',rate:avg||last.rate,spread:0,lots:lots,swap:wk,deposit:dep,withdraw:0,balance:eq,pl:pl,memo:id('f_memo').value});
+safeSave(DATA);
+id('sw_actual').value=swcum;id('b_total').value=eq;id('lc_lots').value=lots;if(avg)id('lc_rate').value=avg;id('lc_cap').value=eq;saveInputs();
+renderNow();renderHist();renderSim();renderSwap();renderBatches();renderLc();
+id('f_msg').textContent='更新しました（'+lots+'ロット・資産'+man(eq)+'）';
+};
+id('f_copy').onclick=function(){
+var t='週次アップデート: 人='+id('prof').value+', 日付='+id('f_date').value+', 保有ロット='+id('f_lots').value+', 平均建玉レート='+id('f_rate').value+', 時価総額='+id('f_eq').value+', 累計スワップ='+id('f_swcum').value+', 含み損益='+id('f_pl').value+', 追加入金='+id('f_dep').value+', メモ='+id('f_memo').value;
+if(navigator.clipboard)navigator.clipboard.writeText(t);id('f_msg').textContent='コピーしました';
+};
+id('f_csv').onclick=function(){
+var h=['week','date','rate','spread','lots','swap','deposit','withdraw','balance','pl','memo'];
+var csv=h.join(',')+'\n'+DATA.map(function(r){return h.map(function(k){return r[k]}).join(',')}).join('\n');
+var b=new Blob([csv],{type:'text/csv'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=PROF+'_運用ログ.csv';a.click();
+};
+id('d_export').onclick=function(){var dump={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf('routeB_')===0)dump[k]=localStorage.getItem(k);}var b=new Blob([JSON.stringify(dump,null,0)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='ルートB_バックアップ.json';a.click();id('d_msg').textContent='書き出しました';};
+id('d_import').onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var d=JSON.parse(r.result);for(var k in d){if(k.indexOf('routeB_')===0)localStorage.setItem(k,d[k]);}location.reload();}catch(e){id('d_msg').textContent='読み込みエラー';}};r.readAsText(f);};
+
+function judgeSp(){var val=id('p_sp').value,e=id('p_spjudge');if(val==='')return e.innerHTML='';e.innerHTML=(+val<=1.7)?'<span class="badge b-ok">買ってOK（1.7以下）</span>':'<span class="badge b-ng">買わない（1.8以上）</span>'}
+id('p_sp').oninput=judgeSp;
+
+async function fetchPrice(){
+try{var r=await fetch('https://open.er-api.com/v6/latest/TRY');var j=await r.json();if(j&&j.rates&&j.rates.JPY)return{rate:j.rates.JPY,t:j.time_last_update_utc||''}}catch(e){}
+try{var r2=await fetch('https://api.frankfurter.app/latest?from=TRY&to=JPY');var j2=await r2.json();if(j2&&j2.rates&&j2.rates.JPY)return{rate:j2.rates.JPY,t:j2.date||''}}catch(e){}
+return null;
+}
+async function refreshPrice(){
+id('hp_time').textContent='価格取得中…';
+var p=await fetchPrice();
+if(!p){id('hp_time').textContent='取得失敗（手入力で運用可）';id('p_time').textContent='取得失敗';return}
+LIVE=p.rate;var disp=p.rate.toFixed(3)+'円';
+id('hp_rate').textContent=disp;id('hp_time').textContent='更新 '+p.t+'（参考仲値）';
+id('p_rate').textContent=disp;id('p_cost').textContent=yen(lotcost(p.rate));id('p_time').textContent=p.t;
+renderNow();renderSim();renderSwap();renderBatches();renderLc();
+}
+id('p_refresh').onclick=refreshPrice;
+
+function renderSwap(){var last=DATA[DATA.length-1];var lots=last.lots,bal=last.balance;var unit=+id('sw_unit').value||25;var actual=+id('sw_actual').value||0;var d0=DATA[0].date?new Date(DATA[0].date+'T06:00:00'):null;var days=(d0&&!isNaN(d0.getTime()))?Math.max(0,Math.floor((new Date()-d0)/86400000)):0;var cum=actual>0?actual:lots*unit*days;var lc=LIVE*10400;var safe=Math.floor(bal/lc);var rem=bal-lots*lc;var need=Math.max(0,(lots+1)*lc-bal);id('sw_days').textContent=days+'日';id('sw_day').textContent=yen(lots*unit);id('sw_cum').textContent=yen(cum);id('sw_safe').textContent=safe.toLocaleString()+' ロット';id('sw_buy').innerHTML='1ロット元金 <b>'+yen(lc)+'</b> ／ 余り <b>'+yen(rem)+'</b> ／ 次の1ロットまで あと <b>'+yen(need)+'</b>';id('sw_hint').textContent=(safe-lots)>0?('今の資金で あと '+(safe-lots)+' ロット買い増しできます'):'買い増しは余り＋スワップ＋入金が「次の1ロットまで」に届いたらOK';}
+id('sw_unit').oninput=renderSwap;
+var BKEY=pk('batches');
+function bGet(){try{return JSON.parse(localStorage.getItem(BKEY))||null}catch(e){return null}}
+function bSave(a){try{localStorage.setItem(BKEY,JSON.stringify(a))}catch(e){}}
+var BATCHES=bGet();if(!BATCHES){BATCHES=(PROF==='honnin')?[{date:'2026-07-06',rate:3.459,lots:8},{date:'2026-07-08',rate:3.475,lots:6},{date:'2026-07-10',rate:3.458,lots:3}]:[];bSave(BATCHES);}
+function renderBatches(){var tb=document.querySelector('#b_table tbody');tb.innerHTML='';var totLots=0,committed=0,wsum=0;BATCHES.forEach(function(b,i){var moto=b.lots*b.rate*10400;totLots+=b.lots;committed+=moto;wsum+=b.lots*b.rate;var tr=document.createElement('tr');tr.innerHTML='<td>'+b.date+'</td><td>'+b.rate+'</td><td>'+b.lots+'</td><td>'+yen(moto)+'</td><td><button class="btnx" data-i="'+i+'">×</button></td>';tb.appendChild(tr);});var total=+id('b_total').value||0;var free=total-committed;var lc=LIVE*10400;var more=Math.floor(free/lc);var avg=totLots>0?(wsum/totLots):0;id('b_lots').textContent=totLots.toLocaleString();id('b_avg').textContent=avg.toFixed(3);id('b_committed').textContent=yen(committed);id('b_free').textContent=yen(free);id('b_more').textContent=(more>0?more:0)+' ロット';id('b_hint').textContent=more>0?('今の総資金だと あと '+more+' ロット買えます（現レート'+LIVE.toFixed(2)+'円・スプレッド1.7以下で）'):'今は過不足なし（買い増しは資金が増えてから）';document.querySelectorAll('.btnx').forEach(function(x){x.onclick=function(){BATCHES.splice(+x.dataset.i,1);bSave(BATCHES);renderBatches();};});}
+id('b_add').onclick=function(){var d=id('b_date').value,r=+id('b_rate').value,n=+id('b_num').value;if(!r||!n){id('b_msg').textContent='レートとロット数を入れてね';return;}BATCHES.push({date:d||'-',rate:r,lots:n});bSave(BATCHES);renderBatches();id('b_msg').textContent='記録しました';id('b_rate').value='';id('b_num').value='';};
+id('b_total').oninput=renderBatches;
+function saveInputs(){try{localStorage.setItem(pk('inputs'),JSON.stringify({unit:id('sw_unit').value,actual:id('sw_actual').value,total:id('b_total').value,g1:id('g1').value,g2:id('g2').value}))}catch(e){}}
+function loadInputs(){var o=null;try{o=JSON.parse(localStorage.getItem(pk('inputs')))}catch(e){}if(!o)o=(PROF==='honnin')?{unit:'26',actual:'1920',total:'516302',g1:'100',g2:'200'}:{unit:'26',actual:'0',total:'0',g1:'100',g2:'200'};id('sw_unit').value=o.unit;id('sw_actual').value=o.actual;id('b_total').value=o.total;if(o.g1)id('g1').value=o.g1;if(o.g2)id('g2').value=o.g2;}
+id('sw_unit').oninput=function(){renderSwap();saveInputs();};
+id('sw_actual').oninput=function(){renderSwap();renderNow();renderBatches();saveInputs();};
+id('b_total').oninput=function(){renderBatches();saveInputs();};
+function renderLc(){var N=+id('lc_lots').value||0;var E=+id('lc_rate').value||3.466;var C=+id('lc_cap').value||0;var lv=+id('lc_level').value||50;var R=LIVE;var req=E*N*400;var equity=C+(R-E)*N*10000;var mr=req>0?(equity/req*100):0;var lev=C>0?(R*N*10000/C):0;var Rlc=N>0?E+((lv/100)*req-C)/(N*10000):-1;id('lc_lev').textContent=lev.toFixed(2)+'倍';id('lc_req').textContent=yen(req);id('lc_mr').textContent=(mr>0?Math.round(mr):0).toLocaleString()+'%';id('lc_price').textContent=Rlc<=0?'0円でも安全':Rlc.toFixed(3)+'円';var drop=R-Rlc,dp=R>0?(drop/R*100):0;id('lc_drop').textContent=Rlc<=0?('現レート'+R.toFixed(3)+'円が0円近くまで下げてもロスカットされません'):('現レート'+R.toFixed(3)+'円から −'+drop.toFixed(3)+'円（−'+Math.round(dp)+'%）でロスカット');id('lc_verdict').textContent=Rlc<=0?'✅ 安全：ほぼ1倍運用。トルコリラが0円近くまで落ちても耐えられる':(dp<20?'⚠ 危険：わずか約'+Math.round(dp)+'%の下落でロスカット。レバレッジ高すぎ':'△ 注意：約'+Math.round(dp)+'%の下落でロスカット');}
+['lc_lots','lc_rate','lc_cap','lc_level'].forEach(function(x){id(x).oninput=renderLc;});
+id('prof').value=PROF;
+id('prof').onchange=function(){var np=id('prof').value;localStorage.setItem('routeB_curprof',np);location.href=location.pathname+'?p='+np;};
+loadInputs();
+var _cur=DATA[DATA.length-1];id('lc_lots').value=_cur.lots||0;id('lc_cap').value=id('b_total').value;if(_cur.rate)id('lc_rate').value=_cur.rate;
+renderNow();renderSim();renderHist();renderSwap();renderBatches();renderLc();refreshPrice();
+fetch('data.json?_='+Date.now()).then(function(r){return r.json()}).then(function(j){
+if(!j||!j._ts||!j.profiles)return;
+var cur=+localStorage.getItem('routeB_syncts')||0;
+if(j._ts<=cur)return;
+Object.keys(j.profiles).forEach(function(p){var o=j.profiles[p]||{};
+if(o.logs)try{localStorage.setItem('routeB_'+p+'_logs',JSON.stringify(o.logs))}catch(e){}
+if(o.batches)try{localStorage.setItem('routeB_'+p+'_batches',JSON.stringify(o.batches))}catch(e){}
+if(o.inputs)try{localStorage.setItem('routeB_'+p+'_inputs',JSON.stringify(o.inputs))}catch(e){}
+});
+try{localStorage.setItem('routeB_syncts',String(j._ts))}catch(e){}
+location.reload();
+}).catch(function(){});
+</script>
+</body>
+</html>
