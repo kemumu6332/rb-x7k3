@@ -92,6 +92,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 <div class="mc"><div class="l">口座残高</div><div class="v gold" id="n_bal">50万円</div></div>
 <div class="mc"><div class="l">累計スワップ</div><div class="v" id="n_swap">0円</div></div>
 <div class="mc"><div class="l">含み損益</div><div class="v" id="n_pl">0円</div></div>
+<div class="mc"><div class="l">次の1ロットまで</div><div class="v gold" id="n_next">—</div></div>
 </div>
 <div class="prog"><div class="pl"><span id="n_g1lab">目標1</span><span id="n_m1p">—</span></div><div class="ptrack"><div class="pfill" id="n_m1b"></div></div></div>
 <div class="prog"><div class="pl"><span id="n_g2lab">目標2</span><span id="n_m2p">—</span></div><div class="ptrack"><div class="pfill" id="n_m2b"></div></div></div>
@@ -111,7 +112,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 </div>
 <p class="muted" id="sw_buy"></p>
 <p class="muted" id="sw_hint"></p>
-<p class="muted">自動の概算です。正確なスワップはGMOの「累計スワップ付与額」で確認し、週次で実績を入力すると補正されます。買い増しは「安全に持てるロット数」まで（現レート×10,400ベース）。</p>
+<p class="muted">スワップ単価はスクショ反映のたびに<b>実績（直近のスワップ増分÷日数÷ロット）から自動計算</b>されます。手で直すこともできます。買い増しは「安全に持てるロット数」まで（現レート×10,400ベース）。</p>
 </div>
 <div class="card"><h2>資産の推移（実績）</h2><div class="chartbox" id="n_chart"></div><p class="muted" id="n_note"></p></div>
 </section>
@@ -403,7 +404,8 @@ var BKEY=pk('batches');
 function bGet(){try{return JSON.parse(localStorage.getItem(BKEY))||null}catch(e){return null}}
 function bSave(a){try{localStorage.setItem(BKEY,JSON.stringify(a))}catch(e){}}
 var BATCHES=bGet();if(!BATCHES){BATCHES=(PROF==='honnin')?[{date:'2026-07-06',rate:3.459,lots:8},{date:'2026-07-08',rate:3.475,lots:6},{date:'2026-07-10',rate:3.458,lots:3}]:[];bSave(BATCHES);}
-function renderBatches(){var tb=document.querySelector('#b_table tbody');tb.innerHTML='';var totLots=0,committed=0,wsum=0;BATCHES.forEach(function(b,i){var moto=b.lots*b.rate*10400;totLots+=b.lots;committed+=moto;wsum+=b.lots*b.rate;var tr=document.createElement('tr');tr.innerHTML='<td>'+b.date+'</td><td>'+b.rate+'</td><td>'+b.lots+'</td><td>'+yen(moto)+'</td><td><button class="btnx" data-i="'+i+'">×</button></td>';tb.appendChild(tr);});var total=+id('b_total').value||0;var free=total-committed;var lc=LIVE*10400;var more=Math.floor(free/lc);var avg=totLots>0?(wsum/totLots):0;id('b_lots').textContent=totLots.toLocaleString();id('b_avg').textContent=avg.toFixed(3);id('b_committed').textContent=yen(committed);id('b_free').textContent=yen(free);id('b_more').textContent=(more>0?more:0)+' ロット';id('b_hint').textContent=more>0?('今の総資金だと あと '+more+' ロット買えます（現レート'+LIVE.toFixed(2)+'円・スプレッド1.7以下で）'):'今は過不足なし（買い増しは資金が増えてから）';document.querySelectorAll('.btnx').forEach(function(x){x.onclick=function(){BATCHES.splice(+x.dataset.i,1);bSave(BATCHES);renderBatches();};});}
+function renderBatches(){var tb=document.querySelector('#b_table tbody');tb.innerHTML='';var totLots=0,committed=0,wsum=0;BATCHES.forEach(function(b,i){var moto=b.lots*b.rate*10400;totLots+=b.lots;committed+=moto;wsum+=b.lots*b.rate;var tr=document.createElement('tr');tr.innerHTML='<td>'+b.date+'</td><td>'+b.rate+'</td><td>'+b.lots+'</td><td>'+yen(moto)+'</td><td><button class="btnx" data-i="'+i+'">×</button></td>';tb.appendChild(tr);});var total=+id('b_total').value||0;var free=total-committed;var lc=LIVE*10400;var more=Math.floor(free/lc);var avg=totLots>0?(wsum/totLots):0;id('b_lots').textContent=totLots.toLocaleString();id('b_avg').textContent=avg.toFixed(3);id('b_committed').textContent=yen(committed);id('b_free').textContent=yen(free);id('b_more').textContent=(more>0?more:0)+' ロット';
+var nx=id('n_next');if(nx){nx.textContent=free>=lc?('今すぐ +'+Math.floor(free/lc)+'ロット買えます'):('あと '+yen(Math.max(0,lc-free)));nx.style.fontSize=free>=lc?'16px':'20px';}id('b_hint').textContent=more>0?('今の総資金だと あと '+more+' ロット買えます（現レート'+LIVE.toFixed(2)+'円・スプレッド1.7以下で）'):'今は過不足なし（買い増しは資金が増えてから）';document.querySelectorAll('.btnx').forEach(function(x){x.onclick=function(){BATCHES.splice(+x.dataset.i,1);bSave(BATCHES);renderBatches();};});}
 id('b_add').onclick=function(){var d=id('b_date').value,r=+id('b_rate').value,n=+id('b_num').value;if(!r||!n){id('b_msg').textContent='レートとロット数を入れてね';return;}BATCHES.push({date:d||'-',rate:r,lots:n});bSave(BATCHES);renderBatches();id('b_msg').textContent='記録しました';id('b_rate').value='';id('b_num').value='';};
 id('b_total').oninput=renderBatches;
 function saveInputs(){try{localStorage.setItem(pk('inputs'),JSON.stringify({unit:id('sw_unit').value,actual:id('sw_actual').value,total:id('b_total').value,g1:id('g1').value,g2:id('g2').value}))}catch(e){}}
