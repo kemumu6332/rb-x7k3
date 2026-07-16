@@ -204,6 +204,14 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 </section>
 
 <section class="panel" id="report">
+<div class="card"><h2>📷 スクショを送る（これだけでOK）</h2>
+<p class="muted">GMOアプリの<b>「建玉一覧」画面のスクショ</b>を選ぶだけ。数字は壱星側で確認してツールに反映します（反映は次の更新時）。<b>上の名前（本人／父／母）が自分になっているか</b>だけ確認してから送ってください。</p>
+<div class="row">
+<label class="btn" style="cursor:pointer">スクショを選んで送信<input type="file" id="up_file" accept="image/*" style="display:none"></label>
+<span class="muted" id="up_msg"></span>
+</div>
+<div id="up_hist" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px"></div>
+</div>
 <div class="card"><h2>週次アップデート（GMOのスクショから入力）</h2>
 <p class="muted">GMO「建玉一覧」の数字をそのまま入れて「更新」を押すと、現況・建玉・ロスカット・目標が全部再計算されます。上の <b>本人／父／母</b> で選んだ人に保存されます。</p>
 <div class="form">
@@ -407,6 +415,36 @@ id('sw_actual').oninput=function(){renderSwap();renderNow();renderBatches();save
 id('b_total').oninput=function(){renderBatches();saveInputs();};
 function renderLc(){var N=+id('lc_lots').value||0;var E=+id('lc_rate').value||3.466;var C=+id('lc_cap').value||0;var lv=+id('lc_level').value||50;var R=LIVE;var req=E*N*400;var equity=C+(R-E)*N*10000;var mr=req>0?(equity/req*100):0;var lev=C>0?(R*N*10000/C):0;var Rlc=N>0?E+((lv/100)*req-C)/(N*10000):-1;id('lc_lev').textContent=lev.toFixed(2)+'倍';id('lc_req').textContent=yen(req);id('lc_mr').textContent=(mr>0?Math.round(mr):0).toLocaleString()+'%';id('lc_price').textContent=Rlc<=0?'0円でも安全':Rlc.toFixed(3)+'円';var drop=R-Rlc,dp=R>0?(drop/R*100):0;id('lc_drop').textContent=Rlc<=0?('現レート'+R.toFixed(3)+'円が0円近くまで下げてもロスカットされません'):('現レート'+R.toFixed(3)+'円から −'+drop.toFixed(3)+'円（−'+Math.round(dp)+'%）でロスカット');id('lc_verdict').textContent=Rlc<=0?'✅ 安全：ほぼ1倍運用。トルコリラが0円近くまで落ちても耐えられる':(dp<20?'⚠ 危険：わずか約'+Math.round(dp)+'%の下落でロスカット。レバレッジ高すぎ':'△ 注意：約'+Math.round(dp)+'%の下落でロスカット');}
 ['lc_lots','lc_rate','lc_cap','lc_level'].forEach(function(x){id(x).oninput=renderLc;});
+var UP_URL='https://script.google.com/macros/s/AKfycbx-0FLMPs4YLxb2Xxzk0Be4RmjMWppxJW9_wfKI1tAqjeNZCRHZcFhJ9p49uLgFLVBDPw/exec';
+var UP_KEY='rb-x7k3-up';
+function upHist(){try{return JSON.parse(localStorage.getItem(pk('uploads')))||[]}catch(e){return[]}}
+function upHistSave(h){try{localStorage.setItem(pk('uploads'),JSON.stringify(h.slice(-12)))}catch(e){}}
+function renderUploads(){var h=upHist();var el=id('up_hist');if(!el)return;el.innerHTML=h.length?'':'<span class="muted">まだ送信履歴はありません</span>';h.slice().reverse().forEach(function(u){var d=document.createElement('div');d.style.cssText='text-align:center;font-size:11px;color:#5a6b72';d.innerHTML='<img src="'+u.thumb+'" style="width:84px;height:auto;border:1px solid #e7e0d2;border-radius:8px;display:block;margin:0 auto 3px">'+u.date+(u.ok?' ✅':' ⚠');el.appendChild(d);});}
+id('up_file').onchange=function(){
+var f=this.files[0];this.value='';if(!f)return;
+id('up_msg').textContent='送信中…';
+var img=new Image(),fr=new FileReader();
+fr.onload=function(){img.onload=function(){
+var W=Math.min(1600,img.width),sc=W/img.width,H=Math.round(img.height*sc);
+var c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(img,0,0,W,H);
+var jpg=c.toDataURL('image/jpeg',0.85);
+var tw=200,th=Math.round(H*tw/W);var tc=document.createElement('canvas');tc.width=tw;tc.height=th;tc.getContext('2d').drawImage(img,0,0,tw,th);
+var thumb=tc.toDataURL('image/jpeg',0.6);
+var now=new Date();function pad(n){return (n<10?'0':'')+n}
+var fname=PROF+'_'+now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds())+'.jpg';
+var dlab=(now.getMonth()+1)+'/'+now.getDate();
+fetch(UP_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key:UP_KEY,who:PROF,filename:fname,mime:'image/jpeg',data:jpg.split(',')[1]})})
+.then(function(r){return r.json()}).then(function(j){
+var h=upHist();h.push({date:dlab,thumb:thumb,ok:!!j.ok});upHistSave(h);renderUploads();
+id('up_msg').textContent=j.ok?'✅ 送信しました！反映は次の更新時です':'⚠ 送信エラー。時間をおいてもう一度試してください';
+}).catch(function(){
+var h=upHist();h.push({date:dlab,thumb:thumb,ok:false});upHistSave(h);renderUploads();
+id('up_msg').textContent='⚠ 送信できませんでした。電波の良い場所でもう一度';
+});
+};img.src=fr.result;};
+fr.readAsDataURL(f);
+};
+renderUploads();
 id('prof').value=PROF;
 id('prof').onchange=function(){var np=id('prof').value;localStorage.setItem('routeB_curprof',np);location.href=location.pathname+'?p='+np;};
 loadInputs();
