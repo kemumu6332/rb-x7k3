@@ -85,6 +85,18 @@ function parsePos_(t) {
   }
   return rows;
 }
+function parseSummary_(t) {
+  var r = null;
+  var m = t.match(/(\d{1,3})\s+(\d\.\d{3})\s+([\-\u2212]?[\d,\uff0c]+)\s+TRY\s*\/\s*JPY[\s\S]{0,10}?(\d+)\s+(\d\.\d{3})\s+([\d,\uff0c]+)/);
+  if (m) {
+    r = { lots: num_(m[1]), rate: num_(m[2]), pl: num_(m[3]), sw: num_(m[6]) };
+  } else {
+    var m2 = t.match(/TRY\s*\/\s*JPY[\s\S]{0,10}?(\d{1,3})\s+(\d\.\d{3})\s+([\-\u2212]?[\d,\uff0c]+)\s+(\d+)\s+(\d\.\d{3})\s+([\d,\uff0c]+)/);
+    if (m2) r = { lots: num_(m2[1]), rate: num_(m2[2]), pl: num_(m2[3]), sw: num_(m2[6]) };
+  }
+  if (!r || !r.lots || r.lots < 1 || r.lots > 999 || !r.rate) return null;
+  return [{ lots: r.lots, rate: r.rate, pl: r.pl, date: null, sw: r.sw }];
+}
 function sum_(pos) {
   if (!pos || !pos.length) return null;
   var L = 0, S = 0, P = 0, W = 0;
@@ -96,7 +108,7 @@ function check_(prof, home, pos) {
   if (!pos || !pos.length) return { pass: false, reason: 'positions-unreadable' };
   var s = sum_(pos);
   if (s.lots < 1 || s.lots > 999) return { pass: false, reason: 'lots-out-of-range' };
-  if (Math.abs(home.pl - s.pl) > 2) return { pass: false, reason: 'pl-mismatch home=' + home.pl + ' pos=' + s.pl };
+  if (Math.abs(home.pl - s.pl) > Math.max(50, s.lots * 30)) return { pass: false, reason: 'pl-mismatch home=' + home.pl + ' pos=' + s.pl };
   var logs = prof.logs || [];
   var prev = null;
   for (var i = logs.length - 1; i >= 0; i--) { if (num_(logs[i].balance)) { prev = logs[i]; break; } }
@@ -115,7 +127,7 @@ function check_(prof, home, pos) {
   }
   return { pass: true, dep: dep, s: s };
 }
-function apply_(d, who, home, pos, verdict) {
+function apply_(d, who, home, pos, verdict, summary) {
   var prof = d.profiles[who];
   var s = verdict.s;
   var logs = prof.logs || (prof.logs = []);
@@ -138,24 +150,40 @@ function apply_(d, who, home, pos, verdict) {
   prof.inputs = prof.inputs || {};
   prof.inputs.actual = String(s.sw);
   prof.inputs.total = String(home.equity);
-  var bs = pos.slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; });
-  prof.batches = bs.map(function(r) { return { date: r.date, rate: r.rate, lots: r.lots }; });
+  if (!summary) {
+    var bs = pos.slice().sort(function(a, b) { return a.date < b.date ? -1 : 1; });
+    prof.batches = bs.map(function(r) { return { date: r.date, rate: r.rate, lots: r.lots }; });
+  }
+  var prevDate = prev && prev.date ? new Date(String(prev.date) + 'T06:00:00') : null;
+  if (prevDate && !isNaN(prevDate.getTime()) && prevSw > 0 && s.lots > 0) {
+    var days = Math.round((new Date() - prevDate) / 86400000);
+    if (days >= 3) {
+      var unit = (s.sw - prevSw) / days / s.lots;
+      if (unit >= 5 && unit <= 100) prof.inputs.unit = String(Math.round(unit));
+    }
+  }
 }
 function pipe_(d, who, fileRefs) {
   var texts = [];
   for (var i = 0; i < fileRefs.length; i++) {
     try { texts.push(ocr_(fileRefs[i].id)); } catch (e) { texts.push(''); }
   }
-  var home = null, pos = null;
+  var home = null, pos = null, summary = false;
   for (var k = 0; k < texts.length; k++) {
     if (!home && texts[k].indexOf(L_EQUITY) >= 0) home = parseHome_(texts[k]);
     if (!pos) { var rws = parsePos_(texts[k]); if (rws.length) pos = rws; }
+  }
+  if (!pos) {
+    for (var k2 = 0; k2 < texts.length; k2++) {
+      var sm = parseSummary_(texts[k2]);
+      if (sm) { pos = sm; summary = true; break; }
+    }
   }
   var names = fileRefs.map(function(f) { return f.name; });
   var verdict = check_(d.profiles[who], home, pos);
   d.audit = d.audit || [];
   if (verdict.pass) {
-    apply_(d, who, home, pos, verdict);
+    apply_(d, who, home, pos, verdict, summary);
     d.audit.push({ who: who, ts: Date.now(), files: names, result: 'auto' });
   } else {
     d.pending = d.pending || [];
