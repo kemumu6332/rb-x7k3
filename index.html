@@ -70,6 +70,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 <div class="wrap">
 <div class="tabs">
 <button class="on" data-tab="now">現況</button>
+<button data-tab="daily">日別スワップ</button>
 <button data-tab="rules">取引ルール</button>
 <button data-tab="sim">シミュレーション</button>
 <button data-tab="batches">建玉管理</button>
@@ -102,7 +103,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 </div>
 </div>
 <div class="card"><h2>スワップ＆買い増し（自動計算）</h2>
-<div class="ctl"><label>スワップ単価(円/日/ロット)</label><input type="number" id="sw_unit" value="26" style="max-width:100px"></div>
+<div class="ctl"><label>スワップ単価(円/日/ロット)</label><input type="number" id="sw_unit" value="25" style="max-width:100px"></div>
 <div class="ctl"><label>GMO累計スワップ(実績・円)</label><input type="number" id="sw_actual" value="1920" style="max-width:120px"></div>
 <div class="grid">
 <div class="mc"><div class="l">経過日数</div><div class="v" id="sw_days">—</div></div>
@@ -115,6 +116,21 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 <p class="muted">スワップ単価はスクショ反映のたびに<b>実績（直近のスワップ増分÷日数÷ロット）から自動計算</b>されます。手で直すこともできます。買い増しは「安全に持てるロット数」まで（現レート×10,400ベース）。</p>
 </div>
 <div class="card"><h2>資産の推移（実績）</h2><div class="chartbox" id="n_chart"></div><p class="muted" id="n_note"></p></div>
+</section>
+
+<section class="panel" id="daily">
+<div class="card"><h2>日別スワップ（GMO公式・自動取得）</h2>
+<div class="grid">
+<div class="mc"><div class="l">現在の単価</div><div class="v gold" id="dy_unit">—</div></div>
+<div class="mc"><div class="l">1日の付与（現ロット）</div><div class="v gold" id="dy_day">—</div></div>
+<div class="mc"><div class="l">今月の付与合計</div><div class="v" id="dy_month">—</div></div>
+<div class="mc"><div class="l">理論累計（全期間）</div><div class="v" id="dy_cum">—</div></div>
+</div>
+<div style="max-height:420px;overflow:auto">
+<table id="dy_table"><thead><tr><th>取引日</th><th>単価(円/1万通貨)</th><th>日数</th><th>保有ロット</th><th>付与額</th></tr></thead><tbody></tbody></table>
+</div>
+<p class="muted">単価はGMO公式の「スワップポイント実績」ページから毎日自動取得。付与額＝単価×その日の保有ロット（買い増しした日から計上）。「日数」が3〜4日の日は週末・祝日ぶんの前払いまとめ付与、0円の行は付与なし営業日です。土日は非表示。理論累計とGMOアプリの「累計スワップ付与額」の差は、決済で実現した分などです。</p>
+</div>
 </section>
 
 <section class="panel" id="rules">
@@ -147,7 +163,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 <div class="fld"><label>初期資金（円）</label><input type="number" id="sd_cap" value="2000000"></div>
 <div class="fld"><label>毎月の追加入金（円）</label><input type="number" id="sd_add" value="30000"></div>
 <div class="fld"><label>レート(円)</label><input type="number" step="0.01" id="sd_rate" value="3.46"></div>
-<div class="fld"><label>スワップ(円/日/ロット)</label><input type="number" id="sd_sw" value="26"></div>
+<div class="fld"><label>スワップ(円/日/ロット)</label><input type="number" id="sd_sw" value="25"></div>
 <div class="fld"><label>レバレッジ(倍)</label><input type="number" id="sd_lev" value="1" min="1" max="25" step="0.5"></div>
 <div class="fld"><label>目標ロット</label><input type="number" id="sd_target" value="200"></div>
 <div class="fld"><label>表示する月数</label><input type="number" id="sd_months" value="60"></div>
@@ -305,7 +321,7 @@ id('n_lots').textContent=lots.toLocaleString();
 id('n_bal').textContent=man(bal);
 id('n_swap').textContent=yen(cum);
 id('n_pl').textContent=yen(last.pl);
-var unit=+id('sw_unit').value||26;
+var unit=+id('sw_unit').value||25;
 var g1=+id('g1').value||1,g2=+id('g2').value||1;
 function pc(t){return Math.min(100,Math.round(lots/t*100))}
 function glab(n,g){return '目標'+n+'：'+g.toLocaleString()+'ロット（≈資産'+man(g*lotcost(LIVE))+'・月収'+man(g*unit*30.4)+'）';}
@@ -320,7 +336,7 @@ id('g1').oninput=function(){renderNow();saveInputs();};
 id('g2').oninput=function(){renderNow();saveInputs();};
 
 function renderSim(){
-var cap=+id('sd_cap').value||0,monthly=+id('sd_add').value||0,E=+id('sd_rate').value||3.46,s=+id('sd_sw').value||26,target=+id('sd_target').value||1,months=Math.min(Math.max(Math.round(+id('sd_months').value||60),1),360);
+var cap=+id('sd_cap').value||0,monthly=+id('sd_add').value||0,E=+id('sd_rate').value||3.46,s=+id('sd_sw').value||25,target=+id('sd_target').value||1,months=Math.min(Math.max(Math.round(+id('sd_months').value||60),1),360);
 var lev=Math.min(Math.max(+id('sd_lev').value||1,1),25);
 var comp=id('sd_comp').checked,tax=id('sd_tax').checked?0.20315:0;
 var L=E*10400/lev,N0=Math.floor(cap/L),N=N0,cash=cap-N*L,banked=0,invested=cap;
@@ -371,7 +387,7 @@ var lastCum=+id('sw_actual').value||0;var wk=Math.max(0,swcum-lastCum);
 DATA.push({week:last.week+1,date:id('f_date').value||'-',rate:avg||last.rate,spread:0,lots:lots,swap:wk,deposit:dep,withdraw:0,balance:eq,pl:pl,memo:id('f_memo').value});
 safeSave(DATA);
 id('sw_actual').value=swcum;id('b_total').value=eq;id('lc_lots').value=lots;if(avg)id('lc_rate').value=avg;id('lc_cap').value=eq;saveInputs();
-renderNow();renderHist();renderSim();renderSwap();renderBatches();renderLc();
+renderNow();renderHist();renderSim();renderSwap();renderBatches();renderLc();renderDaily();
 id('f_msg').textContent='更新しました（'+lots+'ロット・資産'+man(eq)+'）';
 };
 id('f_copy').onclick=function(){
@@ -415,8 +431,28 @@ function renderBatches(){var tb=document.querySelector('#b_table tbody');tb.inne
 var nx=id('n_next');if(nx){nx.textContent=free>=lc?('今すぐ +'+Math.floor(free/lc)+'ロット買えます'):('あと '+yen(Math.max(0,lc-free)));nx.style.fontSize=free>=lc?'16px':'20px';}id('b_hint').textContent=more>0?('今の総資金だと あと '+more+' ロット買えます（現レート'+LIVE.toFixed(2)+'円・スプレッド1.7以下で）'):'今は過不足なし（買い増しは資金が増えてから）';document.querySelectorAll('.btnx').forEach(function(x){x.onclick=function(){BATCHES.splice(+x.dataset.i,1);bSave(BATCHES);renderBatches();};});}
 id('b_add').onclick=function(){var d=id('b_date').value,r=+id('b_rate').value,n=+id('b_num').value;if(!r||!n){id('b_msg').textContent='レートとロット数を入れてね';return;}BATCHES.push({date:d||'-',rate:r,lots:n});bSave(BATCHES);renderBatches();id('b_msg').textContent='記録しました';id('b_rate').value='';id('b_num').value='';};
 id('b_total').oninput=renderBatches;
+function scGet(){try{return JSON.parse(localStorage.getItem('routeB_swapcal'))||{}}catch(e){return{}}}
+function lotsOn(dt){var n=0;BATCHES.forEach(function(b){if(b.date&&b.date!=='-'&&b.date<=dt)n+=b.lots;});return n;}
+function renderDaily(){
+var tb=document.querySelector('#dy_table tbody');if(!tb)return;tb.innerHTML='';
+var cal=scGet();var days=Object.keys(cal).sort();
+var cum=0,mon={},lastUnit=0;
+days.forEach(function(dt){var e=cal[dt];var amt=(e.b||0)*lotsOn(dt);cum+=amt;var mk=dt.slice(0,7);mon[mk]=(mon[mk]||0)+amt;if(e.d>0&&e.b>0)lastUnit=Math.round(e.b/e.d);});
+days.slice().reverse().forEach(function(dt){var e=cal[dt];var wd=new Date(dt+'T12:00:00').getDay();
+if((e.b||0)===0&&(wd===0||wd===6))return;
+var L=lotsOn(dt);var amt=(e.b||0)*L;
+var tr=document.createElement('tr');
+tr.innerHTML='<td>'+dt.slice(5).replace('-','/')+'</td><td>'+(e.b||0)+'</td><td>'+(e.d||0)+'</td><td>'+L+'</td><td>'+(amt?amt.toLocaleString()+'円':'—')+'</td>';
+tb.appendChild(tr);});
+var lots=DATA[DATA.length-1].lots||0;
+var curMk=days.length?days[days.length-1].slice(0,7):'';
+id('dy_unit').textContent=lastUnit?lastUnit+'円/日':'—';
+id('dy_day').textContent=lastUnit?yen(lastUnit*lots):'—';
+id('dy_month').textContent=curMk?yen(mon[curMk]||0):'—';
+id('dy_cum').textContent=days.length?yen(cum):'—';
+}
 function saveInputs(){try{localStorage.setItem(pk('inputs'),JSON.stringify({unit:id('sw_unit').value,actual:id('sw_actual').value,total:id('b_total').value,g1:id('g1').value,g2:id('g2').value}))}catch(e){}}
-function loadInputs(){var o=null;try{o=JSON.parse(localStorage.getItem(pk('inputs')))}catch(e){}if(!o)o=(PROF==='honnin')?{unit:'26',actual:'1920',total:'516302',g1:'100',g2:'200'}:{unit:'26',actual:'0',total:'0',g1:'100',g2:'200'};id('sw_unit').value=o.unit;id('sw_actual').value=o.actual;id('b_total').value=o.total;if(o.g1)id('g1').value=o.g1;if(o.g2)id('g2').value=o.g2;}
+function loadInputs(){var o=null;try{o=JSON.parse(localStorage.getItem(pk('inputs')))}catch(e){}if(!o)o=(PROF==='honnin')?{unit:'25',actual:'1920',total:'516302',g1:'100',g2:'200'}:{unit:'25',actual:'0',total:'0',g1:'100',g2:'200'};id('sw_unit').value=o.unit;id('sw_actual').value=o.actual;id('b_total').value=o.total;if(o.g1)id('g1').value=o.g1;if(o.g2)id('g2').value=o.g2;}
 id('sw_unit').oninput=function(){renderSwap();saveInputs();};
 id('sw_actual').oninput=function(){renderSwap();renderNow();renderBatches();saveInputs();};
 id('b_total').oninput=function(){renderBatches();saveInputs();};
@@ -453,12 +489,13 @@ id('prof').value=PROF;
 id('prof').onchange=function(){var np=id('prof').value;localStorage.setItem('routeB_curprof',np);location.href=location.pathname+'?p='+np;};
 loadInputs();
 var _cur=DATA[DATA.length-1];id('lc_lots').value=_cur.lots||0;id('lc_cap').value=id('b_total').value;if(_cur.rate)id('lc_rate').value=_cur.rate;
-renderNow();renderSim();renderHist();renderSwap();renderBatches();renderLc();refreshPrice();
+renderNow();renderSim();renderHist();renderSwap();renderBatches();renderLc();renderDaily();refreshPrice();
 function applyRemote(j){
 if(!j||!j._ts||!j.profiles)return false;
 var myPend=(j.pending||[]).filter(function(p){return p.who===PROF;});
 var b=id('pend_banner');
 if(b&&myPend.length){b.style.display='block';b.textContent='⚠ 確認待ちのスクショが '+myPend.length+' 件あります（壱星チェック後に反映されます）';}
+if(j.swapCal){try{localStorage.setItem('routeB_swapcal',JSON.stringify(j.swapCal))}catch(e){}renderDaily();}
 var cur=+localStorage.getItem('routeB_syncts')||0;
 if(j._ts<=cur)return false;
 Object.keys(j.profiles).forEach(function(p){var o=j.profiles[p]||{};
