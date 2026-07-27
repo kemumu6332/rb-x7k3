@@ -480,7 +480,7 @@ for(var d=1;d<=dim;d++){
 var iso=CAL_YM+'-'+p2(d);var e=cal[iso];var wd=(start+d-1)%7;var wknd=(wd===0||wd===6);
 var bg='#fff',inner='';
 if(e&&e.b!=null){
-if(e.b>0){var amt=e.b*lotsOn(iso);mtot+=amt;if(e.d>=2)bg='#f6ecd2';inner='<div style="font-weight:700">'+e.b+'円</div><div style="color:var(--goldd);font-weight:700">+'+amt.toLocaleString()+'</div>'+(e.d>=2?'<div style="color:var(--muted)">'+e.d+'日分</div>':'');}
+if(e.b>0){var amt=e.b*lotsOn(iso);mtot+=amt;if(e.d>=2)bg='#f6ecd2';inner='<div style="font-weight:700">'+e.b+'円</div>'+(amt>0?'<div style="color:var(--goldd);font-weight:700">+'+amt.toLocaleString()+'</div>':'')+(e.d>=2?'<div style="color:var(--muted)">'+e.d+'日分</div>':'');}
 else{inner=wknd?'':'<div style="color:var(--muted)">付与なし</div>';}
 }else if(e&&e.d!=null){
 if(e.d>0){if(e.d>=2)bg='#f6ecd2';inner='<div style="color:var(--muted)">'+e.d+'日分</div><div style="color:var(--muted)">(予定)</div>';}
