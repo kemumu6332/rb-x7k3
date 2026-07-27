@@ -131,6 +131,15 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 </div>
 <p class="muted">単価はGMO公式の「スワップポイント実績」ページから毎日自動取得。付与額＝単価×その日の保有ロット（買い増しした日から計上）。「日数」が3〜4日の日は週末・祝日ぶんの前払いまとめ付与、0円の行は付与なし営業日です。土日は非表示。理論累計とGMOアプリの「累計スワップ付与額」の差は、決済で実現した分などです。</p>
 </div>
+<div class="card"><h2>スワップカレンダー</h2>
+<div class="row" style="justify-content:space-between;margin-top:0">
+<button class="btn ghost" id="cal_prev">←</button>
+<div id="cal_title" style="font-weight:700;font-size:15px">—</div>
+<button class="btn ghost" id="cal_next">→</button>
+</div>
+<div id="cal_grid"></div>
+<p class="muted">各マス＝その取引日の <b>単価（円/1万通貨）と自分の付与額</b>。<span style="background:#f6ecd2;padding:1px 6px;border-radius:4px">色付き</span>＝週末・祝日ぶんのまとめ付与日（3〜4日分）。「◯日分」だけの日はまだ実績が出ていない未来の予定。「付与なし」＝スワップが付かない営業日。</p>
+</div>
 </section>
 
 <section class="panel" id="rules">
@@ -439,6 +448,7 @@ var cal=scGet();var days=Object.keys(cal).sort();
 var cum=0,mon={},lastUnit=0;
 days.forEach(function(dt){var e=cal[dt];var amt=(e.b||0)*lotsOn(dt);cum+=amt;var mk=dt.slice(0,7);mon[mk]=(mon[mk]||0)+amt;if(e.d>0&&e.b>0)lastUnit=Math.round(e.b/e.d);});
 days.slice().reverse().forEach(function(dt){var e=cal[dt];var wd=new Date(dt+'T12:00:00').getDay();
+if(e.b==null)return;
 if((e.b||0)===0&&(wd===0||wd===6))return;
 var L=lotsOn(dt);var amt=(e.b||0)*L;
 var tr=document.createElement('tr');
@@ -450,7 +460,40 @@ id('dy_unit').textContent=lastUnit?lastUnit+'円/日':'—';
 id('dy_day').textContent=lastUnit?yen(lastUnit*lots):'—';
 id('dy_month').textContent=curMk?yen(mon[curMk]||0):'—';
 id('dy_cum').textContent=days.length?yen(cum):'—';
+renderCal();
 }
+var CAL_YM=null;
+function p2(n){return (n<10?'0':'')+n}
+function renderCal(){
+var g=id('cal_grid');if(!g)return;
+var cal=scGet();var days=Object.keys(cal).sort();
+if(!days.length){g.innerHTML='<p class="muted">データ取得待ちです（毎朝10時に自動更新）</p>';return;}
+if(!CAL_YM){var td=new Date();CAL_YM=td.getFullYear()+'-'+p2(td.getMonth()+1);if(CAL_YM>days[days.length-1].slice(0,7))CAL_YM=days[days.length-1].slice(0,7);}
+var y=+CAL_YM.slice(0,4),m=+CAL_YM.slice(5,7);
+id('cal_title').textContent=y+'年'+m+'月';
+var start=new Date(y,m-1,1).getDay(),dim=new Date(y,m,0).getDate();
+var mtot=0;
+var h='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px">';
+['日','月','火','水','木','金','土'].forEach(function(w,i){h+='<div style="text-align:center;font-size:11px;color:'+(i===0||i===6?'#b08a8a':'var(--muted)')+';padding:2px 0">'+w+'</div>';});
+for(var i=0;i<start;i++)h+='<div></div>';
+for(var d=1;d<=dim;d++){
+var iso=CAL_YM+'-'+p2(d);var e=cal[iso];var wd=(start+d-1)%7;var wknd=(wd===0||wd===6);
+var bg='#fff',inner='';
+if(e&&e.b!=null){
+if(e.b>0){var amt=e.b*lotsOn(iso);mtot+=amt;if(e.d>=2)bg='#f6ecd2';inner='<div style="font-weight:700">'+e.b+'円</div><div style="color:var(--goldd);font-weight:700">+'+amt.toLocaleString()+'</div>'+(e.d>=2?'<div style="color:var(--muted)">'+e.d+'日分</div>':'');}
+else{inner=wknd?'':'<div style="color:var(--muted)">付与なし</div>';}
+}else if(e&&e.d!=null){
+if(e.d>0){if(e.d>=2)bg='#f6ecd2';inner='<div style="color:var(--muted)">'+e.d+'日分</div><div style="color:var(--muted)">(予定)</div>';}
+}
+if(wknd&&bg==='#fff')bg='var(--bg)';
+h+='<div style="border:1px solid var(--line);border-radius:8px;background:'+bg+';min-height:56px;padding:4px 3px;font-size:10px;line-height:1.5;text-align:center;overflow:hidden"><div style="font-size:11px;color:'+(wknd?'#b08a8a':'var(--ink)')+'">'+d+'</div>'+inner+'</div>';
+}
+h+='</div>';
+h+='<p class="muted" style="margin-top:10px;text-align:right">'+y+'年'+m+'月の付与合計（確定分）: <b>'+mtot.toLocaleString()+'円</b></p>';
+g.innerHTML=h;
+}
+id('cal_prev').onclick=function(){var y=+CAL_YM.slice(0,4),m=+CAL_YM.slice(5,7)-1;if(m<1){m=12;y--;}CAL_YM=y+'-'+p2(m);renderCal();};
+id('cal_next').onclick=function(){var y=+CAL_YM.slice(0,4),m=+CAL_YM.slice(5,7)+1;if(m>12){m=1;y++;}CAL_YM=y+'-'+p2(m);renderCal();};
 function saveInputs(){try{localStorage.setItem(pk('inputs'),JSON.stringify({unit:id('sw_unit').value,actual:id('sw_actual').value,total:id('b_total').value,g1:id('g1').value,g2:id('g2').value}))}catch(e){}}
 function loadInputs(){var o=null;try{o=JSON.parse(localStorage.getItem(pk('inputs')))}catch(e){}if(!o)o=(PROF==='honnin')?{unit:'25',actual:'1920',total:'516302',g1:'100',g2:'200'}:{unit:'25',actual:'0',total:'0',g1:'100',g2:'200'};id('sw_unit').value=o.unit;id('sw_actual').value=o.actual;id('b_total').value=o.total;if(o.g1)id('g1').value=o.g1;if(o.g2)id('g2').value=o.g2;}
 id('sw_unit').oninput=function(){renderSwap();saveInputs();};

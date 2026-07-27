@@ -32,10 +32,13 @@ def fetch_month(year, month):
         urllib.request.Request(url, headers=UA), timeout=30).read().decode('utf-8')
     out = {}
     for mo, day, sell, buy, days in ROW.findall(html):
-        if int(mo) != month or buy is None or buy == '':
+        if int(mo) != month:
             continue
         iso = f'{year}-{int(mo):02d}-{int(day):02d}'
-        out[iso] = {'b': int(buy), 'd': int(days or 0)}
+        if buy:  # 実績確定日
+            out[iso] = {'b': int(buy), 'd': int(days or 0)}
+        elif days:  # 未来日は付与日数の予定だけ載る（カレンダー表示用）
+            out[iso] = {'d': int(days)}
     return out
 
 
@@ -86,7 +89,8 @@ def main():
                        check=True)
         subprocess.run(['git', '-C', REPO, 'push', '-q'], check=True)
 
-    latest = [f'{k}={v["b"]}円/{v["d"]}日' for k, v in sorted(changed.items())]
+    latest = [f'{k}={v["b"]}円/{v["d"]}日' if 'b' in v else f'{k}=予定{v["d"]}日'
+              for k, v in sorted(changed.items())]
     print(f'SUMMARY: ok 追加{len(changed)}件: ' + ', '.join(latest[-5:]))
 
 
