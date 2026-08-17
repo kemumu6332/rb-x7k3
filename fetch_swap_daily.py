@@ -45,9 +45,9 @@ def fetch_month(year, month):
 def main():
     today = datetime.date.today()
     months = [(today.year, today.month)]
-    if today.day <= 3:  # 月初は前月分の取りこぼしも拾う
-        prev = today.replace(day=1) - datetime.timedelta(days=1)
-        months.insert(0, (prev.year, prev.month))
+    # 前月分も常に取得（Mac停止などで数日〜数週飛んでも「予定→実績」の穴を自動で埋める）
+    prev = today.replace(day=1) - datetime.timedelta(days=1)
+    months.insert(0, (prev.year, prev.month))
     cal = {}
     for y, m in months:
         cal.update(fetch_month(y, m))
