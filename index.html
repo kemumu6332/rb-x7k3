@@ -82,7 +82,7 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 <section class="panel on" id="now">
 <div class="card">
 <div id="pend_banner" style="display:none;background:#fbe6da;border-radius:10px;padding:10px 14px;font-size:13px;color:#7a3410;margin-bottom:12px;line-height:1.6"></div>
-<label style="display:block;background:var(--gold);color:#3a2a00;text-align:center;padding:18px 16px;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;line-height:1.6">📷 スクショを送る<br><span style="font-size:12px;font-weight:400">GMOの「ホーム」と「建玉一覧」の2枚をまとめて選べます。送ると自動で読み取って反映します</span><input type="file" id="up_file" accept="image/*" multiple style="display:none"></label>
+<label style="display:block;background:var(--gold);color:#3a2a00;text-align:center;padding:18px 16px;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;line-height:1.6">📷 スクショを送る<br><span style="font-size:12px;font-weight:400">送るのは<b>買い増し・入金したとき</b>だけでOK（「ホーム」と「建玉一覧」の2枚）。ふだんのスワップ・含み損益は自動で更新されます</span><input type="file" id="up_file" accept="image/*" multiple style="display:none"></label>
 <p class="muted" id="up_msg" style="margin:10px 0 0"></p>
 <div id="up_hist" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"></div>
 </div>
@@ -90,11 +90,12 @@ th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left;}
 <div class="grid">
 <div class="mc"><div class="l">経過</div><div class="v" id="n_week">0 週</div></div>
 <div class="mc"><div class="l">保有ロット</div><div class="v" id="n_lots">17</div></div>
-<div class="mc"><div class="l">口座残高</div><div class="v gold" id="n_bal">50万円</div></div>
-<div class="mc"><div class="l">累計スワップ</div><div class="v" id="n_swap">0円</div></div>
-<div class="mc"><div class="l">含み損益</div><div class="v" id="n_pl">0円</div></div>
+<div class="mc"><div class="l" id="n_bal_l">口座残高</div><div class="v gold" id="n_bal">50万円</div></div>
+<div class="mc"><div class="l" id="n_swap_l">累計スワップ</div><div class="v" id="n_swap">0円</div></div>
+<div class="mc"><div class="l" id="n_pl_l">含み損益</div><div class="v" id="n_pl">0円</div></div>
 <div class="mc"><div class="l" id="n_next_l">次の1ロットまで</div><div class="v gold" id="n_next">—</div></div>
 </div>
+<p class="muted" id="n_est_note" style="margin-top:8px"></p>
 <div class="row" style="margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap">
 <span class="muted" style="font-size:12px">買い増しレバ設定</span>
 <span id="lev_btns" style="display:inline-flex;gap:6px"></span>
@@ -337,6 +338,15 @@ id('n_lots').textContent=lots.toLocaleString();
 id('n_bal').textContent=man(bal);
 id('n_swap').textContent=yen(cum);
 id('n_pl').textContent=yen(last.pl);
+var e=(typeof estNow==='function')?estNow():null;
+if(e){
+lots=e.lots;
+id('n_lots').textContent=e.lots.toLocaleString();
+id('n_swap').textContent=yen(e.sw);id('n_swap_l').textContent='累計スワップ（推定）';
+id('n_pl').textContent=yen(e.pl);id('n_pl_l').textContent='含み損益（現在レート）';
+if(e.eq!=null){id('n_bal').textContent=man(e.eq);id('n_bal_l').textContent='時価総額（推定）';}
+var nt=id('n_est_note');if(nt)nt.textContent='⏱ '+e.anchor+'の実測スクショを起点に自動更新中：スワップ '+e.unit+'円/日×'+e.lots+'ロット×'+e.days+'日を加算、含み損益は現在レート'+LIVE.toFixed(3)+'円で再計算。買い増し・入金したときだけスクショを送ってください（そこで実測に合わせ直します）'+(e.mismatch?'。※建玉と最新スクショがズレ中（次のスクショで再同期）':'');
+}else{var nt0=id('n_est_note');if(nt0)nt0.textContent='';}
 var unit=+id('sw_unit').value||25;
 var g1=+id('g1').value||1,g2=+id('g2').value||1;
 function pc(t){return Math.min(100,Math.round(lots/t*100))}
@@ -437,14 +447,32 @@ renderNow();renderSim();renderSwap();renderBatches();renderLc();
 }
 id('p_refresh').onclick=refreshPrice;
 
-function renderSwap(){var last=DATA[DATA.length-1];var lots=last.lots,bal=last.balance;var unit=+id('sw_unit').value||25;var actual=+id('sw_actual').value||0;var d0=DATA[0].date?new Date(DATA[0].date+'T06:00:00'):null;var days=(d0&&!isNaN(d0.getTime()))?Math.max(0,Math.floor((new Date()-d0)/86400000)):0;var cum=actual>0?actual:lots*unit*days;var lev=levGet();var lc=LIVE*10400/lev;var safe=Math.floor(bal/lc);var rem=bal-lots*lc;var need=Math.max(0,(lots+1)*lc-bal);id('sw_days').textContent=days+'日';id('sw_day').textContent=yen(lots*unit);id('sw_cum').textContent=yen(cum);id('sw_safe').textContent=safe.toLocaleString()+' ロット';id('sw_safe_l').textContent=(lev===1?'安全に持てるロット':'持てるロット（'+lev+'倍設定）');id('sw_buy').innerHTML='1ロット元金'+(lev===1?'':'('+lev+'倍)')+' <b>'+yen(lc)+'</b> ／ 余り <b>'+yen(rem)+'</b> ／ 次の1ロットまで あと <b>'+yen(need)+'</b>';id('sw_hint').textContent=(safe-lots)>0?('今の資金で あと '+(safe-lots)+' ロット買い増しできます'):'買い増しは余り＋スワップ＋入金が「次の1ロットまで」に届いたらOK';}
+function estNow(){
+if(!BATCHES||!BATCHES.length)return null;
+var last=DATA[DATA.length-1];
+var actual=(+id('sw_actual').value)||0;
+var unit=+id('sw_unit').value||25;
+var blots=0,pl=0;
+BATCHES.forEach(function(b){blots+=b.lots;pl+=b.lots*10000*((LIVE-0.007)-b.rate);});
+pl=Math.round(pl);
+var ad=last.date||'';
+BATCHES.forEach(function(b){if(b.date&&b.date.length===10&&b.date>ad)ad=b.date;});
+if(!ad)return null;
+var a=new Date(ad+'T06:00:00');if(isNaN(a.getTime()))return null;
+var days=Math.max(0,Math.floor((new Date()-a)/86400000));
+var sw=actual+Math.round(unit*blots*days);
+var mm=(blots!==(+last.lots||0));
+var eq=mm?null:Math.round((last.balance||0)+(sw-actual)+(pl-(+last.pl||0)));
+return {sw:sw,pl:pl,eq:eq,days:days,anchor:ad,lots:blots,unit:unit,mismatch:mm};
+}
+function renderSwap(){var last=DATA[DATA.length-1];var lots=last.lots,bal=last.balance;var unit=+id('sw_unit').value||25;var actual=+id('sw_actual').value||0;var d0=DATA[0].date?new Date(DATA[0].date+'T06:00:00'):null;var days=(d0&&!isNaN(d0.getTime()))?Math.max(0,Math.floor((new Date()-d0)/86400000)):0;var cum=actual>0?actual:lots*unit*days;var e=estNow();if(e){cum=e.sw;lots=e.lots;if(e.eq!=null)bal=e.eq;}var lev=levGet();var lc=LIVE*10400/lev;var safe=Math.floor(bal/lc);var rem=bal-lots*lc;var need=Math.max(0,(lots+1)*lc-bal);id('sw_days').textContent=days+'日';id('sw_day').textContent=yen(lots*unit);id('sw_cum').textContent=yen(cum);id('sw_safe').textContent=safe.toLocaleString()+' ロット';id('sw_safe_l').textContent=(lev===1?'安全に持てるロット':'持てるロット（'+lev+'倍設定）');id('sw_buy').innerHTML='1ロット元金'+(lev===1?'':'('+lev+'倍)')+' <b>'+yen(lc)+'</b> ／ 余り <b>'+yen(rem)+'</b> ／ 次の1ロットまで あと <b>'+yen(need)+'</b>';id('sw_hint').textContent=(safe-lots)>0?('今の資金で あと '+(safe-lots)+' ロット買い増しできます'):'買い増しは余り＋スワップ＋入金が「次の1ロットまで」に届いたらOK';}
 id('sw_unit').oninput=renderSwap;
 var BKEY=pk('batches');
 function bGet(){try{return JSON.parse(localStorage.getItem(BKEY))||null}catch(e){return null}}
 function bSave(a){try{localStorage.setItem(BKEY,JSON.stringify(a))}catch(e){}}
 var BATCHES=bGet();if(!BATCHES){BATCHES=(PROF==='honnin')?[{date:'2026-07-06',rate:3.459,lots:8},{date:'2026-07-08',rate:3.475,lots:6},{date:'2026-07-10',rate:3.458,lots:3}]:[];bSave(BATCHES);}
-function renderBatches(){var lev=levGet();var tb=document.querySelector('#b_table tbody');tb.innerHTML='';var totLots=0,committed=0,wsum=0;BATCHES.forEach(function(b,i){var moto=b.lots*b.rate*10400/lev;totLots+=b.lots;committed+=moto;wsum+=b.lots*b.rate;var tr=document.createElement('tr');tr.innerHTML='<td>'+b.date+'</td><td>'+b.rate+'</td><td>'+b.lots+'</td><td>'+yen(moto)+'</td><td><button class="btnx" data-i="'+i+'">×</button></td>';tb.appendChild(tr);});var total=+id('b_total').value||0;var free=total-committed;var lc=LIVE*10400/lev;var more=Math.floor(free/lc);var avg=totLots>0?(wsum/totLots):0;id('b_lots').textContent=totLots.toLocaleString();id('b_avg').textContent=avg.toFixed(3);id('b_committed').textContent=yen(committed);id('b_free').textContent=yen(free);id('b_more').textContent=(more>0?more:0)+' ロット';
-var nx=id('n_next');if(nx){nx.textContent=free>=lc?('今すぐ +'+Math.floor(free/lc)+'ロット買えます'):('あと '+yen(Math.max(0,lc-free)));nx.style.fontSize=free>=lc?'16px':'20px';}var nl=id('n_next_l');if(nl)nl.textContent='次の1ロットまで'+(lev===1?'':'（'+lev+'倍）');id('b_hint').textContent=more>0?('今の総資金だと あと '+more+' ロット買えます（現レート'+LIVE.toFixed(2)+'円・スプレッド1.7以下'+(lev===1?'':'・'+lev+'倍設定')+'で）'):'今は過不足なし（買い増しは資金が増えてから）';document.querySelectorAll('.btnx').forEach(function(x){x.onclick=function(){BATCHES.splice(+x.dataset.i,1);bSave(BATCHES);renderBatches();};});levNote();}
+function renderBatches(){var lev=levGet();var tb=document.querySelector('#b_table tbody');tb.innerHTML='';var totLots=0,committed=0,wsum=0;BATCHES.forEach(function(b,i){var moto=b.lots*b.rate*10400/lev;totLots+=b.lots;committed+=moto;wsum+=b.lots*b.rate;var tr=document.createElement('tr');tr.innerHTML='<td>'+b.date+'</td><td>'+b.rate+'</td><td>'+b.lots+'</td><td>'+yen(moto)+'</td><td><button class="btnx" data-i="'+i+'">×</button></td>';tb.appendChild(tr);});var total=+id('b_total').value||0;var eB=estNow();var estUsed=false;if(eB&&eB.eq!=null){total=eB.eq;estUsed=true;}var free=total-committed;var lc=LIVE*10400/lev;var more=Math.floor(free/lc);var avg=totLots>0?(wsum/totLots):0;id('b_lots').textContent=totLots.toLocaleString();id('b_avg').textContent=avg.toFixed(3);id('b_committed').textContent=yen(committed);id('b_free').textContent=yen(free);id('b_more').textContent=(more>0?more:0)+' ロット';
+var nx=id('n_next');if(nx){nx.textContent=free>=lc?('今すぐ +'+Math.floor(free/lc)+'ロット買えます'):('あと '+yen(Math.max(0,lc-free)));nx.style.fontSize=free>=lc?'16px':'20px';}var nl=id('n_next_l');if(nl)nl.textContent='次の1ロットまで'+(lev===1?'':'（'+lev+'倍）');id('b_hint').textContent=(more>0?('今の総資金だと あと '+more+' ロット買えます（現レート'+LIVE.toFixed(2)+'円・スプレッド1.7以下'+(lev===1?'':'・'+lev+'倍設定')+'で）'):'今は過不足なし（買い増しは資金が増えてから）')+(estUsed?' ※推定時価総額'+yen(total)+'で計算':'');document.querySelectorAll('.btnx').forEach(function(x){x.onclick=function(){BATCHES.splice(+x.dataset.i,1);bSave(BATCHES);renderBatches();};});levNote();}
 id('b_add').onclick=function(){var d=id('b_date').value,r=+id('b_rate').value,n=+id('b_num').value;if(!r||!n){id('b_msg').textContent='レートとロット数を入れてね';return;}BATCHES.push({date:d||'-',rate:r,lots:n});bSave(BATCHES);renderBatches();id('b_msg').textContent='記録しました';id('b_rate').value='';id('b_num').value='';};
 id('b_total').oninput=renderBatches;
 function levNote(){var lev=levGet();var n=id('lev_note');if(!n)return;if(lev===1){n.textContent='公式どおり（レート×10,400円/ロット・0円まで安全）';n.style.color='';}else{var lcP=LIVE*(1.02-1.04/lev);var dp=Math.round((1.04/lev-0.02)*100);n.innerHTML='⚠ 1ロット'+yen(Math.round(LIVE*10400/lev))+'・ロスカット目安 約'+lcP.toFixed(2)+'円（現レート比−'+dp+'%）';n.style.color='var(--ng)';}}
